@@ -1,28 +1,32 @@
 <?php
 
+// app/Models/Ticket.php
+// used for issued ticket entity and relations
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Ticket extends Model
 {
-    use HasFactory;
-
-    protected $fillable = ['order_id', 'order_item_id', 'ticket_code', 'is_used', 'used_at'];
+    protected $fillable = ['order_id', 'ticket_category_id', 'ticket_code', 'is_used', 'used_at'];
 
     protected function casts(): array
     {
-        return ['is_used' => 'boolean', 'used_at' => 'datetime'];
+        return [
+            'is_used' => 'boolean',
+            'used_at' => 'datetime',
+        ];
     }
 
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
-    public function orderItem()
+    public function ticketCategory(): BelongsTo
     {
-        return $this->belongsTo(OrderItem::class);
+        return $this->belongsTo(TicketCategory::class);
     }
 }

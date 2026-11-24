@@ -37,7 +37,7 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended($user->isAdmin() ? route('admin.dashboard') : route('events.index'));
+        return redirect()->intended(route($user->homeRouteName()));    
     }
 
     public function showRegister(): View
@@ -69,7 +69,7 @@ class AuthController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->intended($user->isAdmin() ? route('admin.dashboard') : route('events.index'))
+        return redirect()->intended(route($user->homeRouteName()))
             ->with('status', 'Akun berhasil diverifikasi. Selamat datang!');
     }
 

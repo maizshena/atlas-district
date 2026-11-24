@@ -27,6 +27,7 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/verify-otp', [AuthController::class, 'showVerify'])->name('auth.verify');
     Route::post('/verify-otp', [AuthController::class, 'verify'])->middleware('throttle:otp-verify')->name('auth.verify.submit');
     Route::post('/resend-otp', [AuthController::class, 'resend'])->middleware('throttle:otp-send')->name('auth.resend');
+    Route::resource('events', AdminEventController::class)->except(['destroy']);
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('auth.logout');
@@ -50,6 +51,23 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::resource('venues', AdminVenueController::class)->except(['show']);
     Route::resource('artists', AdminArtistController::class)->except(['show']);
     Route::resource('events', AdminEventController::class);
+    Route::resource('events.ticket-categories', AdminTicketCategoryController::class)->except(['show'])->shallow();
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+});
+
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('/', DashboardController::class)->name('dashboard');
+
+    Route::get('/gate', [GateController::class, 'index'])->name('gate');
+    Route::post('/gate', [GateController::class, 'validate'])->name('gate.validate');
+
+    Route::resource('venues', AdminVenueController::class)->except(['show']);
+    Route::resource('artists', AdminArtistController::class)->except(['show']);
+
+    Route::delete('events/{event}', [AdminEventController::class, 'destroy'])->name('events.destroy');
+    Route::patch('events/{event}/publish', [AdminEventReviewController::class, 'publish'])->name('events.publish');
+    Route::patch('events/{event}/reject', [AdminEventReviewController::class, 'reject'])->name('events.reject');
+
     Route::resource('events.ticket-categories', AdminTicketCategoryController::class)->except(['show'])->shallow();
     Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
 });

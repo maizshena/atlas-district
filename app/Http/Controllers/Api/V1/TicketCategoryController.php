@@ -22,7 +22,10 @@ class TicketCategoryController extends Controller
             ->when($request->filled('event_id'), fn ($query) => $query->where('event_id', $request->integer('event_id')))
             ->orderBy('event_id')
             ->orderBy('price')
-            ->paginate(min($request->integer('per_page', 15), 100));
+            ->paginate(min($request->integer('per_page', 15), 100))
+            ->whereHas('event', fn ($query) => $query->published());
+    
+            abort_unless($ticketCategory->event->status === EventStatus::Published, 404);
 
         return ApiResponse::success('Daftar kategori tiket.', ApiResponse::paginated($categories));
     }

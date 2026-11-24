@@ -2,7 +2,6 @@
 
 @section('content')
     @php
-        $now = now();
         $isClosed = $event->is_closed || $event->end_date->isPast();
         $maxPerOrder = (int) config('concert.max_tickets_per_order');
         $categoriesPayload = $event->ticketCategories->sortBy('price')->values()->map(fn ($category) => [
@@ -10,91 +9,112 @@
             'price' => $category->price,
             'remaining' => max(0, $category->quota - $category->sold),
         ])->all();
+        $startWib = \App\Support\Formatters::jakartaDateTime($event->start_date);
     @endphp
 
-    <a href="{{ route('events.index') }}" class="inline-flex items-center gap-1 text-sm text-indigo-300 hover:text-indigo-200">&larr; Semua konser</a>
+    <a href="{{ route('events.index') }}" class="mb-4 inline-flex min-h-11 items-center gap-1.5 text-caption text-gray transition hover:text-white">
+        <x-icon name="arrow-left" :size="16" /> Semua konser
+    </a>
 
-    <section class="mt-5 overflow-hidden rounded-3xl border border-white/10 bg-slate-900">
-        <div class="aspect-[21/9] max-h-[420px] bg-slate-800">
-            @if ($event->banner_url)
-                <img src="{{ $event->banner_url }}" alt="Banner {{ $event->name }}" class="h-full w-full object-cover">
-            @else
-                <div class="flex h-full items-center justify-center bg-gradient-to-br from-indigo-900 via-slate-900 to-fuchsia-900 text-6xl font-bold text-white/60">CD</div>
-            @endif
-        </div>
-
-        <div class="grid gap-8 p-5 sm:p-8 lg:grid-cols-[1fr_380px]">
-            <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2">
-                    <p class="text-sm font-semibold uppercase tracking-wide text-indigo-300">{{ $event->start_date->timezone('Asia/Jakarta')->translatedFormat('l, d F Y · H:i') }} WIB</p>
+    <x-bento.grid>
+        <x-bento.tile span="4x2" class="relative overflow-hidden !p-0" aria-label="Poster {{ $event->name }}">
+            <div class="relative h-full min-h-[300px]">
+                @if ($event->banner_url)
+                    <img src="{{ $event->banner_url }}" alt="Banner {{ $event->name }}" fetchpriority="high" decoding="async" class="absolute inset-0 h-full w-full object-cover">
+                @else
+                    <div class="absolute inset-0 bg-linear-to-br from-surface-3 to-surface-2"></div>
+                @endif
+                <div class="absolute inset-0 bg-linear-to-t from-black via-black/50 to-black/10" aria-hidden="true"></div>
+                <div class="relative flex h-full flex-col justify-end p-5 sm:p-7">
                     @if ($isClosed)
-                        <span class="rounded-full bg-rose-400/15 px-2.5 py-1 text-xs font-semibold text-rose-300 ring-1 ring-inset ring-rose-400/30">Event ditutup</span>
+                        <x-chip tone="solid-pink" class="w-fit">Penjualan ditutup</x-chip>
+                    @else
+                        <x-chip tone="solid-green" class="w-fit">Tiket tersedia</x-chip>
                     @endif
-                </div>
-                <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">{{ $event->name }}</h1>
-                <p class="mt-4 whitespace-pre-line leading-7 text-slate-300">{{ $event->description }}</p>
-
-                <div class="mt-7 grid gap-3 sm:grid-cols-2">
-                    <div class="rounded-xl border border-white/10 bg-slate-950/60 p-4">
-                        <p class="text-xs uppercase tracking-wide text-slate-500">Lokasi</p>
-                        <p class="mt-1 font-medium">{{ $event->venue->name }}</p>
-                        <p class="text-sm text-slate-400">{{ $event->venue->address }}, {{ $event->venue->city }}</p>
-                    </div>
-                    <div class="rounded-xl border border-white/10 bg-slate-950/60 p-4">
-                        <p class="text-xs uppercase tracking-wide text-slate-500">Artis</p>
-                        @if ($event->artists->isEmpty())
-                            <p class="mt-1 font-medium">Segera diumumkan</p>
-                        @else
-                            <div class="mt-2 flex flex-wrap gap-2">
-                                @foreach ($event->artists as $artist)
-                                    <span class="inline-flex items-center gap-2 rounded-full bg-white/5 py-1 pl-1 pr-3 text-sm">
-                                        @if ($artist->photo_url)
-                                            <img src="{{ $artist->photo_url }}" alt="" class="h-6 w-6 rounded-full object-cover">
-                                        @endif
-                                        {{ $artist->name }}
-                                    </span>
-                                @endforeach
-                            </div>
-                        @endif
-                    </div>
+                    <h1 class="mt-3 text-display text-white md:text-display-md">{{ $event->name }}</h1>
                 </div>
             </div>
+        </x-bento.tile>
 
-            <div class="rounded-2xl border border-white/10 bg-slate-950/60 p-5" x-data="orderForm({{ \Illuminate\Support\Js::from($categoriesPayload) }}, {{ $maxPerOrder }})">
-                <div class="flex items-center justify-between">
-                    <h2 class="text-lg font-semibold">Pilih tiket</h2>
-                    <span class="text-xs text-slate-500">Maks. {{ $maxPerOrder }} tiket</span>
+        <x-bento.tile span="2x1" tone="raised">
+            <p class="text-micro font-semibold uppercase tracking-wider text-gray">Tanggal</p>
+            <p class="mt-2 flex items-center gap-2 text-heading font-semibold text-white">
+                <x-icon name="calendar" :size="18" /> {{ $event->start_date->timezone('Asia/Jakarta')->translatedFormat('l, d F Y') }}
+            </p>
+            <p class="mt-1 text-caption text-gray"><span class="num text-white">{{ $startWib }}</span> WIB</p>
+        </x-bento.tile>
+
+        <x-bento.tile span="2x1">
+            <p class="text-micro font-semibold uppercase tracking-wider text-gray">Lokasi</p>
+            <p class="mt-2 flex items-center gap-2 text-heading font-semibold text-white">
+                <x-icon name="pin" :size="18" /> {{ $event->venue->name }}
+            </p>
+            <p class="mt-1 text-caption text-gray">{{ $event->venue->address }}, {{ $event->venue->city }}</p>
+        </x-bento.tile>
+
+        <x-bento.tile span="2x1" tone="blue">
+            <p class="text-micro font-semibold uppercase tracking-wider">Lineup</p>
+            @if ($event->artists->isEmpty())
+                <p class="mt-2 text-heading font-semibold">Segera diumumkan</p>
+            @else
+                <ul class="mt-2 flex flex-wrap gap-2">
+                    @foreach ($event->artists as $artist)
+                        <li class="inline-flex items-center gap-2 rounded-full bg-surface-1/80 py-1 pl-1 pr-3 text-caption font-medium text-white">
+                            @if ($artist->photo_url)
+                                <img src="{{ $artist->photo_url }}" alt="" loading="lazy" width="24" height="24" class="h-6 w-6 rounded-full object-cover">
+                            @else
+                                <span class="grid h-6 w-6 place-items-center rounded-full bg-white text-micro font-bold text-black">{{ mb_substr($artist->name, 0, 1) }}</span>
+                            @endif
+                            {{ $artist->name }}
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+        </x-bento.tile>
+
+        <x-bento.tile span="2x2" tone="raised">
+            <h2 class="text-heading font-semibold text-white">Tentang event</h2>
+            <p class="mt-2 whitespace-pre-line text-caption leading-6 text-gray">{{ $event->description }}</p>
+        </x-bento.tile>
+
+        <x-bento.tile span="4x2" class="relative overflow-hidden !p-0">
+            <div class="flex h-full flex-col p-4 lg:p-6" x-data="orderForm({{ \Illuminate\Support\Js::from($categoriesPayload) }}, {{ $maxPerOrder }})">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <h2 class="text-heading font-semibold text-white">Pilih tiket</h2>
+                    <span class="text-micro text-gray">Maks. <span class="num text-white">{{ $maxPerOrder }}</span> tiket per pesanan</span>
                 </div>
 
                 @if ($event->ticketCategories->isEmpty())
-                    <p class="mt-4 rounded-xl border border-dashed border-white/15 p-4 text-sm text-slate-400">Kategori tiket belum tersedia.</p>
+                    <div class="mt-4">
+                        <x-empty-state icon="ticket" title="Kategori tiket belum tersedia" description="Pantau halaman ini untuk pembukaan penjualan." />
+                    </div>
                 @else
-                    <form method="POST" action="{{ route('orders.store') }}" class="mt-4 space-y-3" @submit="submitting = true">
+                    <form method="POST" action="{{ route('orders.store') }}" class="mt-4 space-y-2.5" @submit="submitting = true">
                         @csrf
                         @foreach ($event->ticketCategories->sortBy('price') as $category)
                             @php($remaining = max(0, $category->quota - $category->sold))
-                            <div class="rounded-xl border border-white/10 p-4">
-                                <div class="flex items-start justify-between gap-3">
+                            <div class="rounded-input border border-border-token bg-surface-2 p-3.5">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
                                     <div class="min-w-0">
-                                        <p class="font-medium">{{ $category->name }}</p>
-                                        <p class="mt-0.5 text-sm font-semibold text-emerald-300">{{ \App\Support\Formatters::rupiah($category->price) }}</p>
+                                        <p class="text-body font-semibold text-white">{{ $category->name }}</p>
+                                        <p class="num mt-0.5 text-caption text-white">{{ \App\Support\Formatters::rupiah($category->price) }}</p>
                                     </div>
                                     @if ($remaining > 0 && ! $isClosed)
-                                        <div class="flex items-center gap-1">
-                                            <button type="button" class="grid h-8 w-8 place-items-center rounded-lg border border-white/15 text-lg hover:bg-white/10" @click="quantities[{{ $category->id }}] = Math.max(0, quantities[{{ $category->id }}] - 1)" aria-label="Kurangi tiket {{ $category->name }}">&minus;</button>
-                                            <input type="number" min="0" max="{{ min($maxPerOrder, $remaining) }}" x-model.number="quantities[{{ $category->id }}]" @change="clamp({{ $category->id }})" class="w-14 rounded-lg border border-white/15 bg-slate-900 px-1 py-1.5 text-center text-sm" aria-label="Jumlah tiket {{ $category->name }}">
-                                            <button type="button" class="grid h-8 w-8 place-items-center rounded-lg border border-white/15 text-lg hover:bg-white/10" @click="quantities[{{ $category->id }}] = Math.min(quantities[{{ $category->id }}] + 1, {{ min($maxPerOrder, $remaining) }})" aria-label="Tambah tiket {{ $category->name }}">+</button>
+                                        <div class="flex items-center gap-1.5">
+                                            <button type="button" class="grid h-11 w-11 place-items-center rounded-btn border border-border-token text-heading text-white transition bento-hover:border-border-strong bento-hover:bg-white/5" @click="quantities[{{ $category->id }}] = Math.max(0, quantities[{{ $category->id }}] - 1)" aria-label="Kurangi tiket {{ $category->name }}">&minus;</button>
+                                            <input type="number" min="0" max="{{ min($maxPerOrder, $remaining) }}" x-model.number="quantities[{{ $category->id }}]" @change="clamp({{ $category->id }})" class="num h-11 w-14 rounded-btn border border-border-token bg-surface-3 text-center text-caption text-white focus-visible:border-white" aria-label="Jumlah tiket {{ $category->name }}">
+                                            <button type="button" class="grid h-11 w-11 place-items-center rounded-btn border border-border-token text-heading text-white transition bento-hover:border-border-strong bento-hover:bg-white/5" @click="quantities[{{ $category->id }}] = Math.min(quantities[{{ $category->id }}] + 1, {{ min($maxPerOrder, $remaining) }})" aria-label="Tambah tiket {{ $category->name }}">+</button>
                                         </div>
                                     @elseif ($remaining <= 0)
-                                        <span class="rounded-full bg-rose-400/15 px-2.5 py-1 text-xs font-semibold text-rose-300">Habis</span>
+                                        <x-chip tone="solid-pink">Habis</x-chip>
                                     @else
-                                        <span class="text-xs text-slate-500">Ditutup</span>
+                                        <x-chip tone="solid-gray">Ditutup</x-chip>
                                     @endif
                                 </div>
-                                <div class="mt-2 flex items-center justify-between text-xs text-slate-500">
-                                    <span>Sisa {{ number_format($remaining, 0, ',', '.') }} dari {{ number_format($category->quota, 0, ',', '.') }}</span>
+                                <div class="mt-2 flex items-center justify-between gap-3 text-micro text-gray">
+                                    <span>Sisa <span class="num text-white">{{ number_format($remaining, 0, ',', '.') }}</span> dari <span class="num">{{ number_format($category->quota, 0, ',', '.') }}</span></span>
                                     <template x-if="quantities[{{ $category->id }}] > 0">
-                                        <span class="font-medium text-slate-300" x-text="format(prices[{{ $category->id }}] * quantities[{{ $category->id }}])"></span>
+                                        <span class="num text-white" x-text="format(prices[{{ $category->id }}] * quantities[{{ $category->id }}])"></span>
                                     </template>
                                 </div>
                                 <template x-if="quantities[{{ $category->id }}] > 0">
@@ -106,25 +126,25 @@
                             </div>
                         @endforeach
 
-                        <div class="flex items-center justify-between border-t border-white/10 pt-4 text-sm">
-                            <span class="text-slate-400">Total <span x-show="count() > 0" x-text="'(' + count() + ' tiket)'"></span></span>
-                            <strong x-text="format(total())">Rp 0</strong>
-                        </div>
+                        <div class="mt-auto border-t border-border-token pt-4">
+                            <div class="flex items-baseline justify-between gap-3">
+                                <span class="text-caption text-gray">Total <span x-show="count() > 0" x-text="'(' + count() + ' tiket)'"></span></span>
+                                <strong class="num text-title text-white" x-text="format(total())">Rp 0</strong>
+                            </div>
 
-                        @if ($isClosed)
-                            <button type="button" disabled class="w-full cursor-not-allowed rounded-xl bg-slate-800 px-4 py-3 font-semibold text-slate-500">Event ditutup</button>
-                        @elseif (auth()->check())
-                            <button type="submit" class="w-full rounded-xl bg-indigo-500 px-4 py-3 font-semibold hover:bg-indigo-400 disabled:opacity-60" :disabled="submitting || count() < 1" x-text="submitting ? 'Membuat pesanan...' : 'Buat pesanan'">Buat pesanan</button>
-                            <p class="text-center text-xs text-slate-500">Kuota ditahan selama {{ config('concert.order_ttl_minutes') }} menit sampai dibayar.</p>
-                        @else
-                            <x-button :href="route('login')" class="w-full">Masuk untuk membeli</x-button>
-                        @endif
-                        @guest
-                            <p class="text-center text-xs text-slate-500">Belum punya akun? <a href="{{ route('register') }}" class="text-indigo-300">Daftar gratis</a>.</p>
-                        @endguest
+                            @if ($isClosed)
+                                <button type="button" disabled class="mt-3 flex min-h-11 w-full cursor-not-allowed items-center justify-center rounded-btn bg-surface-3 font-semibold text-gray">Penjualan ditutup</button>
+                            @elseif (auth()->check())
+                                <button type="submit" class="mt-3 flex min-h-11 w-full items-center justify-center rounded-btn bg-white px-4 font-bold text-black transition bento-hover:bg-white/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50" :disabled="submitting || count() < 1" x-text="submitting ? 'Membuat pesanan...' : 'Beli tiket'">Beli tiket</button>
+                                <p class="mt-2 text-center text-micro text-gray">Kuota ditahan <span class="num">{{ config('concert.order_ttl_minutes') }}</span> menit sampai dibayar.</p>
+                            @else
+                                <x-button :href="route('login')" class="mt-3 w-full">Masuk untuk membeli</x-button>
+                                <p class="mt-2 text-center text-micro text-gray">Belum punya akun? <a href="{{ route('register') }}" class="font-semibold text-white underline underline-offset-4">Daftar gratis</a>.</p>
+                            @endif
+                        </div>
                     </form>
                 @endif
             </div>
-        </div>
-    </section>
+        </x-bento.tile>
+    </x-bento.grid>
 @endsection

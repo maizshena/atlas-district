@@ -24,12 +24,14 @@ class EventController extends Controller
         return view('events.index', ['events' => $events, 'search' => $request->string('search')->toString()]);
     }
 
-    public function show(string $slug): View
+    public function show(Request $request, string $slug): View
     {
         $event = Event::query()
             ->with(['venue', 'artists', 'ticketCategories'])
             ->where('slug', $slug)
             ->firstOrFail();
+
+        abort_unless($event->status === EventStatus::Published || $request->user()?->can('preview', $event), 404);
 
         return view('events.show', ['event' => $event]);
     }

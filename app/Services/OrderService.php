@@ -95,8 +95,8 @@ class OrderService
         if ($categories->pluck('event_id')->unique()->count() !== 1) {
             throw ValidationException::withMessages(['items' => ['Satu pesanan hanya boleh berisi kategori dari satu event.']]);
         }
-        if ($event === null || $event->is_closed || $event->end_date->isPast()) {
-            throw ValidationException::withMessages(['items' => ['Event sudah ditutup atau telah berakhir.']]);
+        if ($event === null || $event->status !== EventStatus::Published || $event->is_closed || $event->end_date->isPast()) {
+            throw ValidationException::withMessages(['items' => ['Event belum tayang, sudah ditutup, atau telah berakhir.']]);
         }
 
         $total = 0;

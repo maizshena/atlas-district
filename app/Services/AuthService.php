@@ -30,7 +30,7 @@ class AuthService
                 'email' => $attributes['email'],
                 'password' => $attributes['password'],
             ]);
-            $user->forceFill(['role' => 'CUSTOMER', 'is_verified' => false])->save();
+            $user->forceFill(['role' => UserRole::Customer, 'is_verified' => false])->save();
 
             return $user;
         }, 3);

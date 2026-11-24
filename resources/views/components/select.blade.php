@@ -1,12 +1,14 @@
+{{-- resources/views/components/select.blade.php pilihan dengan label dan error inline --}}
 @props(['label' => null, 'name'])
-<label class="block">
+@php($fieldId = $attributes->get('id') ?? $name)
+<label for="{{ $fieldId }}" class="block">
     @if ($label)
-        <span class="mb-1.5 block text-sm font-medium text-slate-300">{{ $label }}</span>
+        <span class="mb-1.5 block text-caption font-medium text-gray">{{ $label }}</span>
     @endif
-    <select name="{{ $name }}" {{ $attributes->merge(['class' => 'w-full rounded-xl border border-white/15 bg-slate-950 px-3.5 py-2.5 text-sm text-slate-100 focus:border-indigo-400 focus:outline-none']) }}>
+    <select id="{{ $fieldId }}" name="{{ $name }}" @if ($errors->has($name)) aria-invalid="true" aria-describedby="{{ $fieldId }}-error" @endif {{ $attributes->merge(['class' => 'min-h-11 w-full rounded-input border bg-surface-2 px-3.5 py-2.5 text-body text-white focus:outline-none focus-visible:border-white focus-visible:ring-2 focus-visible:ring-white/40 '.($errors->has($name) ? 'border-pink' : 'border-border-token')]) }}>
         {{ $slot }}
     </select>
     @error($name)
-        <span class="mt-1.5 block text-xs text-rose-300">{{ $message }}</span>
+        <span id="{{ $fieldId }}-error" class="mt-1.5 block text-micro text-pink">{{ $message }}</span>
     @enderror
 </label>

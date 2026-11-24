@@ -58,6 +58,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
+                'role' => $user->role->value,
                 'is_verified' => $user->is_verified,
             ],
         ]);

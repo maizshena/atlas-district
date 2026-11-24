@@ -1,33 +1,32 @@
 <?php
 
+// app/Models/OrderItem.php
+// used for order line item entity
+
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OrderItem extends Model
 {
-    use HasFactory;
-
     protected $fillable = ['order_id', 'ticket_category_id', 'quantity', 'unit_price'];
 
     protected function casts(): array
     {
-        return ['quantity' => 'integer', 'unit_price' => 'integer'];
+        return [
+            'quantity' => 'integer',
+            'unit_price' => 'decimal:2',
+        ];
     }
 
-    public function order()
+    public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
-    public function ticketCategory()
+    public function ticketCategory(): BelongsTo
     {
         return $this->belongsTo(TicketCategory::class);
-    }
-
-    public function tickets()
-    {
-        return $this->hasMany(Ticket::class);
     }
 }

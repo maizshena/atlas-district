@@ -1,49 +1,59 @@
 <?php
 
+// app/Models/Order.php
+// used for order entity with status helpers and expired scope
+
 namespace App\Models;
 
-use App\Enums\OrderStatus;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Order extends Model
 {
-    use HasFactory;
+    public const STATUS_PENDING = 'PENDING';
+    public const STATUS_PAID = 'PAID';
+    public const STATUS_CANCELLED = 'CANCELLED';
 
-    protected $fillable = ['user_id', 'order_number', 'status', 'total_amount', 'expires_at', 'paid_at'];
-
-    protected $attributes = ['status' => 'PENDING'];
+    protected $fillable = ['order_number', 'user_id', 'total_amount', 'status', 'expires_at'];
 
     protected function casts(): array
     {
         return [
-            'status' => OrderStatus::class,
-            'total_amount' => 'integer',
+            'total_amount' => 'decimal:2',
             'expires_at' => 'datetime',
-            'paid_at' => 'datetime',
         ];
     }
 
-    // app/Models/Order.php
-    // pending order whose expiry has passed
-    public function scopeExpired(Builder $query): Builder
-    {
-        return $query->where('status', OrderStatus::Pending)->where('expires_at', '<', now());
-    }
-
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function items()
+    public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
-    public function tickets()
+    public function tickets(): HasMany
     {
         return $this->hasMany(Ticket::class);
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->isPending() && $this->expires_at->isPast();
+    }
+
+    public function scopeExpired(Builder $query): Builder
+    {
+        return $query->where('status', self::STATUS_PENDING)
+            ->where('expires_at', '<', now());
     }
 }

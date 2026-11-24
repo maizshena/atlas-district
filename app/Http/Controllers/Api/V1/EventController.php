@@ -24,7 +24,8 @@ class EventController extends Controller
             ->when($request->filled('venue_id'), fn (Builder $query) => $query->where('venue_id', $request->integer('venue_id')))
             ->when($request->boolean('upcoming'), fn (Builder $query) => $query->upcoming())
             ->orderBy('start_date')
-            ->paginate(min($request->integer('per_page', 15), 100));
+            ->paginate(min($request->integer('per_page', 15), 100))
+            ->published();
 
         return ApiResponse::success('Daftar event.', ApiResponse::paginated($events));
     }

@@ -1,66 +1,55 @@
 @extends('layouts.admin', ['title' => 'Event'])
 
 @section('content')
-    <div class="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-            <p class="text-sm text-indigo-300">Katalog</p>
-            <h1 class="mt-1 text-3xl font-bold">Event</h1>
-        </div>
-        <x-button :href="route('admin.events.create')">Tambah event</x-button>
-    </div>
+    <x-bento.page-header eyebrow="Katalog" title="Event" description="Kelola jadwal konser, banner, dan status penjualan.">
+        <x-slot:actions>
+            <x-button :href="route('admin.events.create')">Tambah event</x-button>
+        </x-slot:actions>
+    </x-bento.page-header>
 
-    <form method="GET" action="{{ route('admin.events.index') }}" class="mb-4 flex max-w-md gap-2">
-        <input name="search" value="{{ request('search') }}" placeholder="Cari event" class="min-w-0 flex-1 rounded-xl border border-white/15 bg-slate-950 px-3.5 py-2.5 text-sm focus:border-indigo-400 focus:outline-none">
-        <x-button type="submit" variant="secondary">Cari</x-button>
-    </form>
+    <x-admin.filter-bar :action="route('admin.events.index')" placeholder="Cari event" />
 
     @if ($events->isEmpty())
-        <x-empty-state title="Belum ada event" description="Buat event lalu tambahkan kategori tiketnya." />
+        <x-empty-state icon="calendar" title="Belum ada event" description="Buat event lalu tambahkan kategori tiketnya.">
+            <x-button :href="route('admin.events.create')" class="mt-5">Tambah event</x-button>
+        </x-empty-state>
     @else
-        <div class="overflow-hidden rounded-2xl border border-white/10 bg-slate-900">
-            <table class="w-full text-left text-sm">
-                <thead class="bg-white/5 text-xs uppercase tracking-wide text-slate-400">
-                    <tr>
-                        <th class="px-4 py-3">Event</th>
-                        <th class="hidden px-4 py-3 md:table-cell">Jadwal</th>
-                        <th class="px-4 py-3">Status</th>
-                        <th class="hidden px-4 py-3 sm:table-cell">Kategori</th>
-                        <th class="px-4 py-3 text-right">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-white/10">
-                    @foreach ($events as $event)
-                        <tr>
-                            <td class="px-4 py-3">
-                                <a href="{{ route('admin.events.show', $event) }}" class="font-medium hover:text-indigo-300">{{ $event->name }}</a>
-                                <p class="text-xs text-slate-500">{{ $event->venue->name }}</p>
-                            </td>
-                            <td class="hidden px-4 py-3 text-slate-300 md:table-cell">{{ $event->start_date->timezone('Asia/Jakarta')->format('d/m/Y H:i') }}</td>
-                            <td class="px-4 py-3">
-                                @if ($event->is_closed)
-                                    <span class="rounded-full bg-slate-500/15 px-2.5 py-1 text-xs font-semibold text-slate-300">Ditutup</span>
-                                @elseif ($event->end_date->isPast())
-                                    <span class="rounded-full bg-rose-400/15 px-2.5 py-1 text-xs font-semibold text-rose-300">Selesai</span>
-                                @else
-                                    <span class="rounded-full bg-emerald-400/15 px-2.5 py-1 text-xs font-semibold text-emerald-300">Aktif</span>
-                                @endif
-                            </td>
-                            <td class="hidden px-4 py-3 text-slate-300 sm:table-cell">{{ $event->ticket_categories_count }}</td>
-                            <td class="px-4 py-3">
-                                <div class="flex justify-end gap-2">
-                                    <a href="{{ route('admin.events.edit', $event) }}" class="rounded-lg border border-white/15 px-3 py-1.5 text-xs hover:bg-white/10">Ubah</a>
-                                    <form method="POST" action="{{ route('admin.events.destroy', $event) }}" onsubmit="return confirm('Hapus event ini?');">
+        <x-admin.data-tile>
+            <x-admin.table :head="[['label' => 'Event'], ['label' => 'Jadwal', 'hide' => 'md'], ['label' => 'Status'], ['label' => 'Kategori', 'hide' => 'sm'], ['label' => 'Aksi', 'align' => 'right']]">
+                @foreach ($events as $event)
+                    <tr class="transition hover:bg-surface-2">
+                        <td class="px-4 py-3 lg:px-6">
+                            <a href="{{ route('admin.events.show', $event) }}" class="font-semibold text-white hover:underline">{{ $event->name }}</a>
+                            <p class="text-micro text-gray">{{ $event->venue->name }}@if (auth()->user()->isAdmin() && $event->organizer) · oleh {{ $event->organizer->name }}@endif</p>
+                            <x-admin.event-status-chip :event="$event" class="mt-1" />
+                        </td>
+                        <td class="hidden whitespace-nowrap px-4 py-3 text-gray md:table-cell lg:px-6">{{ $event->start_date->timezone('Asia/Jakarta')->format('d/m/Y H:i') }} WIB</td>
+                        <td class="px-4 py-3 lg:px-6">
+                            @if ($event->is_closed)
+                                <x-chip tone="solid-gray"><x-icon name="cross" :size="12" /> Ditutup</x-chip>
+                            @elseif ($event->end_date->isPast())
+                                <x-chip tone="solid-pink"><x-icon name="clock" :size="12" /> Selesai</x-chip>
+                            @else
+                                <x-chip tone="solid-green"><x-icon name="check" :size="12" /> Aktif</x-chip>
+                            @endif
+                        </td>
+                        <td class="hidden px-4 py-3 text-gray sm:table-cell lg:px-6">{{ $event->ticket_categories_count }}</td>
+                        <td class="px-4 py-3 lg:px-6">
+                            <div class="flex justify-end gap-2">
+                                <x-admin.row-action :href="route('admin.events.edit', $event)">Ubah</x-admin.row-action>
+                                @if (auth()->user()->isAdmin())
+                                    <form method="POST" action="{{ route('admin.events.destroy', $event) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <button class="rounded-lg border border-rose-400/30 px-3 py-1.5 text-xs text-rose-300 hover:bg-rose-400/10">Hapus</button>
+                                        <x-admin.row-action tone="danger" confirm="Hapus event ini?">Hapus</x-admin.row-action>
                                     </form>
-                                </div>
-                            </td>
-                        </tr>
-                    @endforeach
-                </tbody>
-            </table>
-        </div>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                @endforeach
+            </x-admin.table>
+        </x-admin.data-tile>
         <div class="mt-6">{{ $events->links() }}</div>
     @endif
 @endsection

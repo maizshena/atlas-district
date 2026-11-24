@@ -25,22 +25,28 @@ return new class extends Migration
     public function up(): void
     {
         foreach (self::INDEXES as $table => $columns) {
-            Schema::table($table, function (Blueprint $blueprint) use ($table, $columns): void {
-                foreach ($columns as $column) {
-                    $blueprint->index($column, "{$table}_{$column}_index");
+            foreach ($columns as $column) {
+                $name = "{$table}_{$column}_index";
+                if (Schema::hasIndex($table, $name)) {
+                    continue;
                 }
-            });
+
+                Schema::table($table, fn (Blueprint $blueprint) => $blueprint->index($column, $name));
+            }
         }
     }
 
     public function down(): void
     {
         foreach (self::INDEXES as $table => $columns) {
-            Schema::table($table, function (Blueprint $blueprint) use ($table, $columns): void {
-                foreach ($columns as $column) {
-                    $blueprint->dropIndex("{$table}_{$column}_index");
+            foreach ($columns as $column) {
+                $name = "{$table}_{$column}_index";
+                if (! Schema::hasIndex($table, $name)) {
+                    continue;
                 }
-            });
+
+                Schema::table($table, fn (Blueprint $blueprint) => $blueprint->dropIndex($name));
+            }
         }
     }
 };

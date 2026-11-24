@@ -11,23 +11,29 @@ use Illuminate\Support\Facades\DB;
 class EventService
 {
     public function __construct(private MediaService $media) {}
-
-    public function store(array $data): Event
+    
+    public function store(array $data, ?User $creator = null): Event
     {
         $artistIds = $data['artist_ids'] ?? null;
         unset($data['artist_ids']);
-
+    
         if (isset($data['banner'])) {
             $data['banner_url'] = $this->media->upload($data['banner'], 'concert-district/events');
         }
         unset($data['banner']);
-
-        return DB::transaction(function () use ($data, $artistIds): Event {
-            $event = Event::query()->create($data);
+    
+        $ownership = $creator?->isEventOrganizer()
+            ? ['organizer_id' => $creator->id, 'status' => EventStatus::PendingReview]
+            : ['status' => EventStatus::Published];
+    
+        return DB::transaction(function () use ($data, $artistIds, $ownership): Event {
+            $event = (new Event($data))->forceFill($ownership);
+            $event->save();
+    
             if ($artistIds !== null) {
                 $event->artists()->sync($artistIds);
             }
-
+    
             return $event->load(self::RELATIONS);
         });
     }
@@ -75,5 +81,25 @@ class EventService
         $this->media->delete($url);
     }
 
-    private const RELATIONS = ['venue', 'artists', 'ticketCategories'];
-}
+
+
+    public function publish(Event $event): Event
+    {
+        if (! $event->ticketCategories()->exists()) {
+            throw new ConflictException('Tambahkan minimal satu kategori tiket sebelum menayangkan event.');
+        }
+
+        $event->forceFill(['status' => EventStatus::Published])->save();
+
+        return $event;
+    }
+
+    public function reject(Event $event): Event
+    {
+        $event->forceFill(['status' => EventStatus::Rejected])->save();
+
+        return $event;
+    }
+
+        private const RELATIONS = ['venue', 'artists', 'ticketCategories'];
+    }

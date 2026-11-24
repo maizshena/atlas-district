@@ -25,6 +25,8 @@ class EventFactory extends Factory
             'end_date' => (clone $start)->modify('+4 hours'),
             'is_closed' => false,
             'banner_url' => null,
+            'organizer_id' => null,
+            'status' => EventStatus::Published,
         ];
     }
 
@@ -35,4 +37,13 @@ class EventFactory extends Factory
             'end_date' => now()->subDays(2)->addHours(4),
         ]);
     }
-}
+
+
+        public function pendingFor(User $organizer): static
+        {
+            return $this->state(fn (array $attributes) => [
+                'organizer_id' => $organizer->id,
+                'status' => EventStatus::PendingReview,
+            ]);
+        }
+        }

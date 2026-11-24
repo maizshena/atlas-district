@@ -22,3 +22,13 @@ class EnsureUserIsVerified
         return $next($request);
     }
 }
+
+class EnsureUserCanManageEvents
+{
+    public function handle(Request $request, Closure $next): Response
+    {
+        abort_unless($request->user()?->canManageEvents(), 403, 'Akses pengelola event diperlukan.');
+
+        return $next($request);
+    }
+}

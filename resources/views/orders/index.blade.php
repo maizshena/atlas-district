@@ -1,31 +1,30 @@
 @extends('layouts.guest', ['title' => 'Pesanan saya'])
 
 @section('content')
-    <div class="mb-7">
-        <p class="text-sm text-indigo-300">Akun Anda</p>
-        <h1 class="mt-1 text-3xl font-bold">Pesanan saya</h1>
-    </div>
+    <x-bento.page-header eyebrow="Akun Anda" title="Pesanan saya" description="Riwayat reservasi tiket Anda di Concert District." />
 
     @if ($orders->isEmpty())
-        <x-empty-state title="Belum ada pesanan" description="Pilih konser lalu buat pesanan pertama Anda.">
+        <x-empty-state icon="ticket" title="Belum ada pesanan" description="Pilih konser lalu buat pesanan pertama Anda.">
             <x-button :href="route('events.index')" class="mt-5">Jelajahi konser</x-button>
         </x-empty-state>
     @else
-        <div class="space-y-3">
+        <x-bento.grid as="ul">
             @foreach ($orders as $order)
-                <a href="{{ route('orders.show', $order) }}" class="flex flex-col gap-4 rounded-2xl border border-white/10 bg-slate-900 p-5 transition hover:border-indigo-400/50 sm:flex-row sm:items-center sm:justify-between">
-                    <div class="min-w-0">
-                        <p class="font-semibold">{{ $order->order_number }}</p>
-                        <p class="mt-1 truncate text-sm text-slate-400">{{ $order->items->pluck('ticketCategory.event.name')->unique()->join(', ') }}</p>
-                        <p class="mt-1 text-xs text-slate-500">Dibuat {{ \App\Support\Formatters::jakartaDateTime($order->created_at) }}</p>
+                <x-bento.tile span="2x1" :href="route('orders.show', $order)" :label="'Buka pesanan '.$order->order_number" as="li" class="list-none">
+                    <div class="flex h-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div class="min-w-0">
+                            <p class="num text-caption text-white">{{ $order->order_number }}</p>
+                            <p class="mt-1 truncate text-caption text-gray">{{ $order->items->pluck('ticketCategory.event.name')->unique()->join(', ') }}</p>
+                            <p class="mt-1 text-micro text-gray">Dibuat {{ \App\Support\Formatters::jakartaDateTime($order->created_at) }}</p>
+                        </div>
+                        <div class="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
+                            <span class="num text-body text-white">{{ \App\Support\Formatters::rupiah($order->total_amount) }}</span>
+                            <x-status-badge :status="$order->status" />
+                        </div>
                     </div>
-                    <div class="flex items-center gap-4 sm:flex-col sm:items-end">
-                        <span class="font-semibold">{{ \App\Support\Formatters::rupiah($order->total_amount) }}</span>
-                        <x-status-badge :status="$order->status" />
-                    </div>
-                </a>
+                </x-bento.tile>
             @endforeach
-        </div>
+        </x-bento.grid>
         <div class="mt-8">{{ $orders->links() }}</div>
     @endif
 @endsection

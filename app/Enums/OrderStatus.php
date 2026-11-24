@@ -19,13 +19,24 @@ enum OrderStatus: string
         };
     }
 
-    public function badgeClasses(): string
+    // app/Enums/OrderStatus.php nama tone tema dan ikon per status untuk badge
+    public function tone(): string
     {
         return match ($this) {
-            self::Pending => 'bg-amber-400/15 text-amber-300 ring-amber-400/30',
-            self::Paid => 'bg-emerald-400/15 text-emerald-300 ring-emerald-400/30',
-            self::Cancelled => 'bg-slate-500/15 text-slate-300 ring-slate-400/30',
-            self::Expired => 'bg-rose-400/15 text-rose-300 ring-rose-400/30',
+            self::Pending => 'orange',
+            self::Paid => 'green',
+            self::Cancelled => 'solid-gray',
+            self::Expired => 'pink',
+        };
+    }
+
+    public function icon(): string
+    {
+        return match ($this) {
+            self::Pending => 'clock',
+            self::Paid => 'check',
+            self::Cancelled => 'cross',
+            self::Expired => 'clock',
         };
     }
 }

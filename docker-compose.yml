@@ -1,27 +1,32 @@
+# docker-compose.yml
+# used for local postgresql and mailpit services
+
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
+    container_name: concert-district-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: concert_district
-      POSTGRES_USER: concert_district
+      POSTGRES_USER: concert
       POSTGRES_PASSWORD: secret
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U concert_district -d concert_district"]
+      test: ["CMD-SHELL", "pg_isready -U concert -d concert_district"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   mailpit:
-    image: axllent/mailpit:latest
+    image: axllent/mailpit
+    container_name: concert-district-mail
     restart: unless-stopped
     ports:
       - "1025:1025"
       - "8025:8025"
 
 volumes:
-  postgres_data:
+  pgdata:

@@ -1,11 +1,209 @@
+/* resources/css/app.css token tema gelap dan utilitas animasi bento */
 @import 'tailwindcss';
+@font-face {
+    font-family: 'Plus Jakarta Sans Variable';
+    font-style: normal;
+    font-display: swap;
+    font-weight: 200 800;
+    src: url('@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2') format('woff2-variations');
+}
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views/**/*.blade.php';
+
+@custom-variant bento-hover {
+    &:hover {
+        @media (hover: hover) {
+            @slot;
+        }
+    }
+}
 
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Plus Jakarta Sans Variable', system-ui, sans-serif;
+
+    --color-black: #000000;
+    --color-white: #ffffff;
+    --color-gray: #999999;
+
+    --color-surface-0: #000000;
+    --color-surface-1: #0d0d0d;
+    --color-surface-2: #171717;
+    --color-surface-3: #222222;
+    --color-border-token: rgba(255, 255, 255, 0.1);
+    --color-border-strong: rgba(255, 255, 255, 0.28);
+    --color-scrim: rgba(0, 0, 0, 0.62);
+
+    --color-orange: #fe8240;
+    --color-green: #59dc80;
+    --color-pink: #ffb8e5;
+    --color-blue: #99a8fe;
+
+    --text-display: 2rem;
+    --text-display--line-height: 2.375rem;
+    --text-display--font-weight: 800;
+    --text-display--letter-spacing: -0.02em;
+    --text-display-md: 2.5rem;
+    --text-display-md--line-height: 2.75rem;
+    --text-display-md--font-weight: 800;
+    --text-display-md--letter-spacing: -0.02em;
+    --text-title: 1.5rem;
+    --text-title--line-height: 2rem;
+    --text-title--font-weight: 700;
+    --text-title--letter-spacing: -0.01em;
+    --text-heading: 1.125rem;
+    --text-heading--line-height: 1.625rem;
+    --text-heading--font-weight: 600;
+    --text-body: 1rem;
+    --text-body--line-height: 1.5rem;
+    --text-caption: 0.875rem;
+    --text-caption--line-height: 1.25rem;
+    --text-micro: 0.75rem;
+    --text-micro--line-height: 1rem;
+
+    --radius-tile: 1.5rem;
+    --radius-btn: 1rem;
+    --radius-input: 0.875rem;
+
+    --animate-tile-in: tile-in 320ms ease-out both;
+    --animate-reveal: fade-in 240ms ease-out both;
+    --animate-count: fade-in 150ms ease-out both;
+    --animate-pop: pop 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    --animate-shimmer: shimmer 1200ms linear infinite;
+
+    @keyframes fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(2px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
+@layer base {
+    html {
+        color-scheme: dark;
+        scrollbar-gutter: stable;
+    }
+
+    body {
+        background-color: var(--color-surface-0);
+        color: var(--color-white);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-white);
+        outline-offset: 2px;
+    }
+
+    ::selection {
+        background-color: var(--color-white);
+        color: var(--color-black);
+    }
+
+    input,
+    select,
+    textarea {
+        color-scheme: dark;
+    }
+}
+
+@keyframes tile-in {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pop {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes shimmer {
+    from {
+        background-position: 200% 0;
+    }
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@layer components {
+    .shimmer {
+        background-image: linear-gradient(90deg, var(--color-surface-2) 0%, var(--color-surface-3) 50%, var(--color-surface-2) 100%);
+        background-size: 200% 100%;
+        animation: var(--animate-shimmer);
+    }
+
+    .countdown-tick {
+        transition:
+            opacity 150ms ease-out,
+            transform 150ms ease-out;
+    }
+}
+
+@layer utilities {
+    .num {
+        font-variant-numeric: tabular-nums;
+        font-weight: 800;
+    }
+
+    .bento-reveal {
+        opacity: 0;
+    }
+
+    .bento-reveal.is-revealed {
+        animation: var(--animate-tile-in);
+    }
+
+    .btn-press:active {
+        transform: scale(0.98);
+    }
+
+    .tile-secondary :is(p, span, h1, h2, h3, h4, dt, dd, li, strong, time) {
+        color: inherit;
+    }
+
+    .tile-secondary .sub {
+        color: inherit;
+        opacity: 0.85;
+    }
+
+    .tile-focus:focus-visible {
+        outline: 2px solid var(--color-white);
+        outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .animate-tile-in,
+        .animate-count,
+        .animate-pop {
+            animation: fade-in 100ms ease-out both;
+        }
+
+        .shimmer {
+            animation: none;
+        }
+
+        .bento-reveal.is-revealed {
+            animation: fade-in 100ms ease-out both;
+        }
+    }
 }
 
 [x-cloak] {
@@ -18,3 +216,4 @@
         animation-duration: 0.01ms !important;
     }
 }
+@view-transition { navigation: auto; }

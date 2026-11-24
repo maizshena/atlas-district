@@ -1,5 +1,8 @@
 <?php
 
+// database/migrations/2026_11_11_000009_create_order_items_table.php
+// used for line items so pending orders know which quota to release
+
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -9,13 +12,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('order_items', function (Blueprint $table): void {
+        Schema::create('order_items', function (Blueprint $table) {
             $table->id();
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('ticket_category_id')->constrained()->restrictOnDelete();
             $table->unsignedInteger('quantity');
-            $table->unsignedBigInteger('unit_price');
+            $table->decimal('unit_price', 15, 2);
             $table->timestamps();
+
             $table->unique(['order_id', 'ticket_category_id']);
         });
 

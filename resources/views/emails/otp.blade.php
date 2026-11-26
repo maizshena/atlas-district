@@ -16,6 +16,14 @@
                 <p style="margin:16px 0 0;font-size:12px;color:#999999;">Jika Anda tidak mendaftar, abaikan email ini.</p>
             </td>
         </tr>
+        <x-mail.layout title="Kode verifikasi" :width="480">
+            <p style="margin:0;font-size:13px;letter-spacing:2px;text-transform:uppercase;color:#ffffff;">Concert District</p>
+            <h1 style="margin:12px 0 0;font-size:22px;color:#ffffff;">Verifikasi email Anda</h1>
+            <x-mail.muted :size="14">Gunakan kode berikut untuk mengaktifkan akun Anda:</x-mail.muted>
+            <p style="margin:20px 0;padding:16px;text-align:center;font-size:30px;font-weight:bold;letter-spacing:10px;color:#000000;background:#ffffff;border-radius:16px;">{{ $code }}</p>
+            <x-mail.muted :top="0">Kode berlaku sampai {{ \App\Support\Formatters::jakartaDateTime($expiresAt) }}.</x-mail.muted>
+            <x-mail.muted :top="16" :size="12">Jika Anda tidak mendaftar, abaikan email ini.</x-mail.muted>
+        </x-mail.layout>
     </table>
 </body>
 </html>

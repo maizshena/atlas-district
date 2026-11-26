@@ -8,10 +8,20 @@ use App\Models\Event;
 use App\Models\Order;
 use App\Models\Ticket;
 use App\Models\TicketCategory;
+use App\Services\DashboardStatsService;
 use Illuminate\View\View;
 
-// app/Http/Controllers/Web/Admin/DashboardController.php
-// summary cards for the admin dashboard
+class DashboardController extends Controller
+{
+    public function __invoke(DashboardStatsService $stats): View
+    {
+        return view('admin.dashboard', [
+            ...$stats->summary(),
+            'recentOrders' => Order::query()->with('user')->latest()->limit(8)->get(),
+        ]);
+    }
+}
+
 class DashboardController extends Controller
 {
     public function __invoke(): View

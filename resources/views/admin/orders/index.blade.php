@@ -1,7 +1,7 @@
 @extends('layouts.admin', ['title' => 'Pesanan'])
 
 @section('content')
-    <x-bento.page-header eyebrow="Transaksi" title="Pesanan" description="Seluruh pesanan dengan status pembayaran dan pelanggannya." />
+    <x-bento.page-header eyebrow="Transaksi" title="Pesanan" :description="auth()->user()->isAdmin() ? 'Seluruh pesanan dengan status pembayaran dan pelanggannya.' : 'Pesanan untuk event milik Anda. Email pembeli disamarkan.'" />
 
     <x-admin.filter-bar :action="route('admin.orders.index')" placeholder="Cari nomor pesanan">
         <select name="status" aria-label="Filter status" class="h-11 rounded-input border border-border-token bg-surface-3 px-3 text-caption text-white focus:outline-none focus-visible:border-white">
@@ -25,7 +25,7 @@
                         </td>
                         <td class="hidden px-4 py-3 md:table-cell lg:px-6">
                             <p class="text-white">{{ $order->user->name }}</p>
-                            <p class="text-micro text-gray">{{ $order->user->email }}</p>
+                            <p class="text-micro text-gray">{{ auth()->user()->isAdmin() ? $order->user->email : $order->user->maskedEmail() }}</p>
                         </td>
                         <td class="hidden px-4 py-3 text-gray lg:table-cell lg:px-6">
                             {{ $order->items->map(fn ($item) => $item->ticketCategory->name.' x'.$item->quantity)->join(', ') }}

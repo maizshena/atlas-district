@@ -12,24 +12,17 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 
-// app/Http/Controllers/Web/TicketController.php
-// renders owned tickets grouped by order, qr images served per ticket
+// app/Http/Controllers/Web/TicketController.php daftar tiket berpaginasi dan qr dengan etag dan cache lama
 class TicketController extends Controller
 {
     public function index(Request $request, TicketService $tickets): View
     {
-        $items = $tickets->ownedByUser($request->user()->id)
-            ->groupBy(fn ($ticket) => $ticket->order_id)
-            ->map(fn ($group) => [
-                'order' => $group->first()->order,
-                'tickets' => $group->values(),
-            ])
-            ->values();
+        $userId = $request->user()->id;
 
         return view('tickets.index', [
-            'groups' => $items,
+            'orders' => $tickets->paidOrdersWithTickets($userId),
             'pendingOrders' => Order::query()
-                ->where('user_id', $request->user()->id)
+                ->where('user_id', $userId)
                 ->where('status', OrderStatus::Pending)
                 ->where('expires_at', '>', now())
                 ->with('items.ticketCategory.event')
@@ -42,9 +35,13 @@ class TicketController extends Controller
     {
         abort_if($ticket->order->user_id !== $request->user()->id, 404);
 
-        return response($qrCodes->png($ticket->ticket_code), 200, [
-            'Content-Type' => 'image/png',
-            'Cache-Control' => 'private, max-age=300',
-        ]);
+        $etag = '"'.md5($ticket->ticket_code).'"';
+        $headers = ['ETag' => $etag, 'Cache-Control' => 'private, max-age=604800, immutable'];
+
+        if (str_replace('W/', '', (string) $request->header('If-None-Match')) === $etag) {
+            return response('', 304, $headers);
+        }
+
+        return response($qrCodes->png($ticket->ticket_code), 200, $headers + ['Content-Type' => 'image/png']);
     }
 }

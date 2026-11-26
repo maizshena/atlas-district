@@ -76,7 +76,7 @@ class EventController extends Controller
 
     public function update(UpdateEventRequest $request, Event $event, EventService $events): RedirectResponse
     {
-        $events->update($event, $request->validated());
+        $events->update($event, $request->validated(), $request->user());
 
         return redirect()->route('admin.events.index')->with('status', 'Event berhasil diperbarui.');
     }

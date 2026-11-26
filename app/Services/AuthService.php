@@ -17,10 +17,14 @@ class AuthService
 
     public function register(array $attributes): User
     {
-        $existing = User::query()->where('email', $attributes['email'])->first();
+        $existing = User::query()->where('email', $attributes['email'])->with('otp')->first();
 
         if ($existing !== null && $existing->is_verified) {
             throw ValidationException::withMessages(['email' => ['Email sudah terdaftar.']]);
+        }
+
+        if ($existing !== null && $existing->otp?->expires_at->isFuture()) {
+            throw ValidationException::withMessages(['email' => ['Pendaftaran email ini sedang menunggu verifikasi. Masukkan kode OTP yang sudah dikirim atau coba lagi setelah kode kedaluwarsa.']]);
         }
 
         $user = DB::transaction(function () use ($existing, $attributes): User {

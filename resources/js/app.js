@@ -1,5 +1,3 @@
-// resources/js/app.js
-// alpine entrypoint plus small interaction helpers
 import Alpine from 'alpinejs';
 
 window.Alpine = Alpine;
@@ -34,6 +32,17 @@ const revealTiles = (root = document) => {
         tile.dataset.reveal = index;
         observer.observe(tile);
     });
+};
+
+const lockSubmitButton = (button) => {
+    button.dataset.originalHtml = button.innerHTML;
+    button.disabled = true;
+    button.textContent = 'Memproses...';
+};
+
+const unlockSubmitButton = (button) => {
+    button.innerHTML = button.dataset.originalHtml ?? button.innerHTML;
+    button.disabled = false;
 };
 
 Alpine.data('countdown', (expiresAt) => ({
@@ -123,6 +132,19 @@ Alpine.data('orderForm', (categories, maxPerOrder) => ({
     maxPerOrder,
     serverErrors: [],
     submitting: false,
+    init() {
+        window.addEventListener('pageshow', (event) => {
+            if (event.persisted) {
+                this.submitting = false;
+            }
+        });
+    },
+    decrease(id) {
+        this.quantities[id] = Math.max(0, Number(this.quantities[id] || 0) - 1);
+    },
+    increase(id, limit) {
+        this.quantities[id] = Math.min(Number(this.quantities[id] || 0) + 1, limit);
+    },
     total() {
         return Object.entries(this.quantities).reduce((sum, [id, quantity]) => sum + (this.prices[id] ?? 0) * Number(quantity || 0), 0);
     },
@@ -140,15 +162,21 @@ Alpine.data('orderForm', (categories, maxPerOrder) => ({
 
 document.addEventListener('submit', (event) => {
     const button = event.target.querySelector('[data-submit]');
-    if (button) {
-        button.disabled = true;
-        button.dataset.originalText = button.textContent;
-        button.textContent = 'Memproses...';
+    if (button && !button.disabled) {
+        window.setTimeout(() => lockSubmitButton(button), 0);
+    }
+});
+
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        document.querySelectorAll('[data-submit][disabled]').forEach(unlockSubmitButton);
     }
 });
 
 document.addEventListener('alpine:init', () => {
     revealTiles(document);
 });
+
+
 
 Alpine.start();

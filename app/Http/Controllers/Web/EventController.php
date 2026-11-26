@@ -33,6 +33,6 @@ class EventController extends Controller
 
         abort_unless($event->status === EventStatus::Published || $request->user()?->can('preview', $event), 404);
 
-        return view('events.show', ['event' => $event]);
+        return view('events.show', ['event' => $event, 'notice' => $event->activeNotice()]);
     }
 }

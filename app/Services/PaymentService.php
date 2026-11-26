@@ -19,6 +19,9 @@ class PaymentService
 {
     public function pay(Order $order): Order
     {
+        if (! config('concert.payment_simulation')) {
+            throw ValidationException::withMessages(['order' => ['Pembayaran online belum tersedia.']]);
+        }
         $result = DB::transaction(function () use ($order): bool {
             $locked = Order::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
             if ($locked->status !== OrderStatus::Pending) {
@@ -37,7 +40,7 @@ class PaymentService
                 }
             }
 
-            $locked->update(['status' => 'PAID', 'paid_at' => now()]);
+            $locked->update(['status' => OrderStatus::Paid, 'paid_at' => now()]);
 
             return true;
         }, 3);

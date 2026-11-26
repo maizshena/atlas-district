@@ -1,0 +1,1 @@
+<x-back-link :href="route('admin.events.show', $event)">{{ $event->name }}</x-back-link>

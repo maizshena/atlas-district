@@ -61,4 +61,31 @@
             </section>
         @endforeach
     @endif
+    @if ($orders->isEmpty())
+    <x-empty-state icon="ticket" title="Belum ada tiket" description="Tiket muncul di sini setelah pembayaran berhasil.">
+        <x-button :href="route('events.index')" class="mt-5">Lihat konser</x-button>
+    </x-empty-state>
+    
+    @else
+        @foreach ($orders as $order)
+            @php($event = $order->tickets->first()->orderItem->ticketCategory->event)
+            <section class="mb-6" aria-labelledby="grup-{{ $order->id }}">
+                <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+                    <div>
+                        <p class="text-micro text-gray">{{ $order->order_number }}</p>
+                        <h2 id="grup-{{ $order->id }}" class="text-title text-white">{{ $event->name }}</h2>
+                    </div>
+                    <p class="text-caption text-gray">{{ \App\Support\Formatters::jakartaDate($event->start_date) }} &middot; {{ $event->venue->name ?? '' }}</p>
+                </div>
+
+                <x-bento.grid as="ul">
+                    @foreach ($order->tickets as $ticket)
+                        <x-ticket.card :ticket="$ticket" />
+                    @endforeach
+                </x-bento.grid>
+            </section>
+        @endforeach
+
+        <div class="mt-6">{{ $orders->links() }}</div>
+    @endif
 @endsection

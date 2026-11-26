@@ -46,7 +46,7 @@ class Event extends Model
 
     public function scopeSearch(Builder $query, ?string $term): Builder
     {
-        return $query->when(filled($term), fn (Builder $builder) => $builder->where('name', 'ilike', '%'.$term.'%'));
+        return $query->when(filled($term), fn (Builder $builder) => $builder->whereRaw("lower(name) like ? escape '\\'", [LikeEscaper::contains($term)]));
     }
 
     public function venue(): BelongsTo
@@ -67,5 +67,20 @@ class Event extends Model
     public function ticketCategories(): HasMany
     {
         return $this->hasMany(TicketCategory::class);
+    }
+
+    public function notices(): HasMany
+    {
+        return $this->hasMany(EventNotice::class);
+    }
+
+    public function changeLogs(): HasMany
+    {
+        return $this->hasMany(EventChangeLog::class);
+    }
+
+    public function activeNotice(): ?EventNotice
+    {
+        return $this->notices()->active()->orderByDesc('updated_at')->first();
     }
 }

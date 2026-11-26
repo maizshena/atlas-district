@@ -1,5 +1,7 @@
 {{-- resources/views/components/bento/stat.blade.php isi tile angka besar dengan label --}}
 @props(['value', 'label', 'hint' => null, 'delta' => null, 'icon' => null, 'flash' => null, 'count' => null])
+@props(['eyebrow' => null, 'title', 'description' => null])
+
 <div class="flex h-full flex-col">
     <div class="flex items-start justify-between gap-2">
         <p class="text-micro font-semibold uppercase tracking-wider opacity-70">{{ $label }}</p>
@@ -19,4 +21,18 @@
         <p class="mt-auto pt-3 text-micro sub">{{ $hint }}</p>
     @endif
     {{ $slot }}
+    <div {{ $attributes->merge(['class' => 'mb-6 flex flex-wrap items-end justify-between gap-4']) }}>
+        <div class="min-w-0">
+            @if ($eyebrow)
+                <x-bento.eyebrow>{{ $eyebrow }}</x-bento.eyebrow>
+            @endif
+            <h1 class="mt-1 text-display text-white">{{ $title }}</h1>
+            @if ($description)
+                <p class="mt-2 max-w-2xl text-caption text-gray">{{ $description }}</p>
+            @endif
+        </div>
+        @isset($actions)
+            <div class="flex flex-wrap gap-2">{{ $actions }}</div>
+        @endisset
+    </div>
 </div>

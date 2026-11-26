@@ -52,4 +52,14 @@ class EventPolicy
     {
         return $user->isEventOrganizer() && (int) $event->organizer_id === $user->id;
     }
+
+    public function manageCategories(User $user, Event $event): bool
+    {
+        return $user->isAdmin() || ($this->owns($user, $event) && $event->status === EventStatus::PendingReview);
+    }
+
+    public function manageNotices(User $user, Event $event): bool
+    {
+        return $user->isAdmin() || ($this->owns($user, $event) && $event->status === EventStatus::Published);
+    }
 }

@@ -2,8 +2,8 @@
 
 namespace App\Services;
 
+use App\Enums\EventStatus;
 use App\Enums\OrderStatus;
-use App\Exceptions\ConflictException;
 use App\Models\Order;
 use App\Models\TicketCategory;
 use App\Models\User;
@@ -12,11 +12,12 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use RuntimeException;
 
-// app/Services/OrderService.php
 // used for order creation, quota reservation, cancellation and expiry cleanup
 class OrderService
 {
     private const MAX_ORDER_NUMBER_ATTEMPTS = 5;
+
+    public function __construct(private OrderNumberGenerator $orderNumbers) {}
 
     public function create(User $user, array $items): Order
     {
@@ -60,14 +61,35 @@ class OrderService
         $order->update(['status' => OrderStatus::Expired]);
     }
 
-    public function cancelExpiredOrders(): int
+    public function cancelExpiredOrders(int $batchSize = 200, int $maxSeconds = 50): int
     {
-        $ids = Order::expired()->orderBy('id')->limit(200)->pluck('id');
+        $deadline = now()->addSeconds($maxSeconds);
+        $lastId = 0;
         $cancelled = 0;
 
-        foreach ($ids as $id) {
-            $didCancel = DB::transaction(function () use ($id): bool {
+        while (now()->lessThan($deadline)) {
+            $ids = Order::expired()->where('id', '>', $lastId)->orderBy('id')->limit($batchSize)->pluck('id');
+
+            if ($ids->isEmpty()) {
+                break;
+            }
+
+            foreach ($ids as $id) {
+                $cancelled += (int) $this->cancelOneExpired((int) $id);
+            }
+
+            $lastId = (int) $ids->last();
+        }
+
+        return $cancelled;
+    }
+
+    private function cancelOneExpired(int $id): bool
+    {
+        try {
+            return DB::transaction(function () use ($id): bool {
                 $order = Order::query()->whereKey($id)->lockForUpdate()->first();
+
                 if ($order === null || $order->status !== OrderStatus::Pending || $order->expires_at->isFuture()) {
                     return false;
                 }
@@ -76,14 +98,17 @@ class OrderService
 
                 return true;
             }, 3);
-            $cancelled += (int) $didCancel;
-        }
+        } catch (Throwable $exception) {
+            report($exception);
 
-        return $cancelled;
+            return false;
+        }
     }
 
     private function createWithinTransaction(User $user, array $items): Order
     {
+        $this->ensureWithinPendingLimit($user);
+
         $ids = array_map(fn (array $item): int => $item['ticket_category_id'], $items);
         $categories = TicketCategory::query()->whereIn('id', $ids)->orderBy('id')->lockForUpdate()->get()->keyBy('id');
 
@@ -110,7 +135,7 @@ class OrderService
 
         $order = Order::query()->create([
             'user_id' => $user->id,
-            'order_number' => $this->nextOrderNumber(),
+            'order_number' => $this->orderNumbers->next(),
             'status' => OrderStatus::Pending,
             'total_amount' => $total,
             'expires_at' => now()->addMinutes(config('concert.order_ttl_minutes')),
@@ -127,6 +152,21 @@ class OrderService
         }
 
         return $order->load('items.ticketCategory.event');
+    }
+
+    private function ensureWithinPendingLimit(User $user): void
+    {
+        User::query()->whereKey($user->id)->lockForUpdate()->first();
+
+        $pendingCount = Order::query()
+            ->where('user_id', $user->id)
+            ->where('status', OrderStatus::Pending)
+            ->where('expires_at', '>', now())
+            ->count();
+
+        if ($pendingCount >= config('concert.max_pending_orders_per_user')) {
+            throw ValidationException::withMessages(['items' => ['Selesaikan atau batalkan pesanan tertunda sebelum membuat pesanan baru.']]);
+        }
     }
 
     /**
@@ -161,23 +201,5 @@ class OrderService
         foreach ($items as $item) {
             $categories->get($item->ticket_category_id)?->decrement('sold', $item->quantity);
         }
-    }
-
-    private function nextOrderNumber(): string
-    {
-        DB::statement('SELECT pg_advisory_xact_lock(hashtext(?))', ['concert-district-order-'.now()->format('Ymd')]);
-
-        $prefix = 'INV-'.now()->format('Ymd').'-';
-        $latest = Order::query()
-            ->where('order_number', 'like', $prefix.'%')
-            ->orderByDesc('order_number')
-            ->value('order_number');
-        $sequence = $latest === null ? 1 : ((int) substr($latest, -3)) + 1;
-
-        if ($sequence > 999) {
-            throw new ConflictException('Nomor pesanan harian telah mencapai batas.');
-        }
-
-        return $prefix.str_pad((string) $sequence, 3, '0', STR_PAD_LEFT);
     }
 }

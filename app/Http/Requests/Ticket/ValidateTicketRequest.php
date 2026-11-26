@@ -8,7 +8,7 @@ class ValidateTicketRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return $this->user()?->canManageEvents() ?? false;
     }
 
     public function rules(): array

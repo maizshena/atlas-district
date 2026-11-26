@@ -13,7 +13,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Order extends Model
 {
     public const STATUS_PENDING = 'PENDING';
+
     public const STATUS_PAID = 'PAID';
+
     public const STATUS_CANCELLED = 'CANCELLED';
 
     protected $fillable = ['order_number', 'user_id', 'total_amount', 'status', 'expires_at'];
@@ -25,6 +27,8 @@ class Order extends Model
             'expires_at' => 'datetime',
         ];
     }
+
+    protected $attributes = ['status' => OrderStatus::Pending->value];
 
     public function user(): BelongsTo
     {
@@ -55,5 +59,12 @@ class Order extends Model
     {
         return $query->where('status', self::STATUS_PENDING)
             ->where('expires_at', '<', now());
+    }
+
+    public function scopeVisibleTo(Builder $query, User $user): Builder
+    {
+        return $user->isAdmin()
+            ? $query
+            : $query->whereHas('items.ticketCategory.event', fn (Builder $events) => $events->where('organizer_id', $user->id));
     }
 }

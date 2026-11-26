@@ -24,8 +24,8 @@ class TicketCategoryController extends Controller
             ->orderBy('price')
             ->paginate(min($request->integer('per_page', 15), 100))
             ->whereHas('event', fn ($query) => $query->published());
-    
-            abort_unless($ticketCategory->event->status === EventStatus::Published, 404);
+
+        abort_unless($ticketCategory->event->status === EventStatus::Published, 404);
 
         return ApiResponse::success('Daftar kategori tiket.', ApiResponse::paginated($categories));
     }

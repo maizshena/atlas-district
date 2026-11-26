@@ -24,7 +24,7 @@ class OtpRateLimitTest extends TestCase
     public function test_wrong_otp_can_be_retried_many_times_without_tripping_the_limiter(): void
     {
         $user = User::factory()->unverified()->create(['email' => 'verify.user@example.com']);
-        Otp::query()->create(['user_id' => $user->id, 'code' => '123456', 'expires_at' => now()->addMinutes(10)]);
+        Otp::query()->create(['user_id' => $user->id, 'code' => app(OtpService::class)->hash('123456'), 'expires_at' => now()->addMinutes(10)]);
 
         for ($attempt = 1; $attempt <= 9; $attempt++) {
             $this->post(route('auth.verify.submit'), [
@@ -61,7 +61,10 @@ class OtpRateLimitTest extends TestCase
     public function test_resending_otp_is_limited_but_does_not_block_verification(): void
     {
         $user = User::factory()->unverified()->create(['email' => 'verify.user@example.com']);
-        Otp::query()->create(['user_id' => $user->id, 'code' => '654321', 'expires_at' => now()->addMinutes(10)]);
+        Otp::query()->create(['user_id' => $user->id, 'code' => app(OtpService::class)->hash('654321'), 'expires_at' => now()->addMinutes(10)]);
+
+        Mail::fake();
+        $code = Mail::queued(OtpMail::class)->last()->code;
 
         for ($attempt = 1; $attempt <= 3; $attempt++) {
             $this->post(route('auth.resend'), ['email' => 'verify.user@example.com'])->assertRedirect();

@@ -37,7 +37,7 @@ class AuthController extends Controller
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        return redirect()->intended(route($user->homeRouteName()));    
+        return redirect()->intended(route($user->homeRouteName()));
     }
 
     public function showRegister(): View

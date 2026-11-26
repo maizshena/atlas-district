@@ -36,8 +36,8 @@ class TicketConfirmationMail extends Mailable implements ShouldQueue
     {
         $qr = app(QrCodeService::class);
 
-        return $this->order->tickets->map(fn ($ticket) => Attachment::fromData(
-            fn () => base64_decode(substr($qr->dataUri($ticket->ticket_code), strlen('data:image/png;base64,'))),
+        return $this->order->tickets->map(fn ($ticket): Attachment => Attachment::fromData(
+            fn (): string => $qr->png($ticket->ticket_code),
             $ticket->ticket_code.'.png',
         )->withMime('image/png'))->all();
     }

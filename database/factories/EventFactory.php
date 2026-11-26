@@ -38,12 +38,11 @@ class EventFactory extends Factory
         ]);
     }
 
-
-        public function pendingFor(User $organizer): static
-        {
-            return $this->state(fn (array $attributes) => [
-                'organizer_id' => $organizer->id,
-                'status' => EventStatus::PendingReview,
-            ]);
-        }
-        }
+    public function pendingFor(User $organizer): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'organizer_id' => $organizer->id,
+            'status' => EventStatus::PendingReview,
+        ]);
+    }
+}

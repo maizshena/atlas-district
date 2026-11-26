@@ -2,9 +2,7 @@
 @props(['back' => null, 'backLabel' => 'Kembali', 'title', 'description' => null, 'action' => null, 'multipart' => false, 'method' => null, 'cancel' => null, 'submit' => 'Simpan'])
 <div class="mx-auto max-w-2xl">
     @if ($back)
-        <a href="{{ $back }}" class="mb-4 inline-flex min-h-11 items-center gap-1.5 text-caption text-gray hover:text-white">
-            <x-icon name="arrow-left" :size="16" /> {{ $backLabel }}
-        </a>
+        <x-back-link :href="$back">{{ $backLabel }}</x-back-link>
     @endif
 
     <x-bento.tile span="2x2" tone="raised" class="!col-span-1 !row-span-1">

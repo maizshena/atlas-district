@@ -3,6 +3,7 @@
 use App\Http\Controllers\Web\Admin\ArtistController as AdminArtistController;
 use App\Http\Controllers\Web\Admin\DashboardController;
 use App\Http\Controllers\Web\Admin\EventController as AdminEventController;
+use App\Http\Controllers\Web\Admin\EventReviewController as AdminEventReviewController;
 use App\Http\Controllers\Web\Admin\GateController;
 use App\Http\Controllers\Web\Admin\OrderController as AdminOrderController;
 use App\Http\Controllers\Web\Admin\TicketCategoryController as AdminTicketCategoryController;
@@ -27,7 +28,6 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/verify-otp', [AuthController::class, 'showVerify'])->name('auth.verify');
     Route::post('/verify-otp', [AuthController::class, 'verify'])->middleware('throttle:otp-verify')->name('auth.verify.submit');
     Route::post('/resend-otp', [AuthController::class, 'resend'])->middleware('throttle:otp-send')->name('auth.resend');
-    Route::resource('events', AdminEventController::class)->except(['destroy']);
 });
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('auth.logout');
@@ -42,24 +42,21 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/tickets/{ticket}/qr', [TicketController::class, 'qr'])->whereNumber('ticket')->name('tickets.qr');
 });
 
-Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {
-    Route::get('/', DashboardController::class)->name('dashboard');
+Route::middleware(['auth', 'verified', 'organizer'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::resource('events', AdminEventController::class)->except(['destroy']);
+    Route::resource('events.ticket-categories', AdminTicketCategoryController::class)->except(['show'])->shallow();
+
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
 
     Route::get('/gate', [GateController::class, 'index'])->name('gate');
-    Route::post('/gate', [GateController::class, 'validate'])->name('gate.validate');
+    Route::post('/gate', [GateController::class, 'validate'])->middleware('throttle:gate-scan')->name('gate.validate');
 
-    Route::resource('venues', AdminVenueController::class)->except(['show']);
-    Route::resource('artists', AdminArtistController::class)->except(['show']);
-    Route::resource('events', AdminEventController::class);
-    Route::resource('events.ticket-categories', AdminTicketCategoryController::class)->except(['show'])->shallow();
-    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::post('events/{event}/notices', [AdminEventNoticeController::class, 'store'])->middleware('throttle:20,1')->name('events.notices.store');
+    Route::delete('event-notices/{notice}', [AdminEventNoticeController::class, 'destroy'])->name('event-notices.destroy');
 });
 
 Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {
     Route::get('/', DashboardController::class)->name('dashboard');
-
-    Route::get('/gate', [GateController::class, 'index'])->name('gate');
-    Route::post('/gate', [GateController::class, 'validate'])->name('gate.validate');
 
     Route::resource('venues', AdminVenueController::class)->except(['show']);
     Route::resource('artists', AdminArtistController::class)->except(['show']);
@@ -67,7 +64,4 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::delete('events/{event}', [AdminEventController::class, 'destroy'])->name('events.destroy');
     Route::patch('events/{event}/publish', [AdminEventReviewController::class, 'publish'])->name('events.publish');
     Route::patch('events/{event}/reject', [AdminEventReviewController::class, 'reject'])->name('events.reject');
-
-    Route::resource('events.ticket-categories', AdminTicketCategoryController::class)->except(['show'])->shallow();
-    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
 });

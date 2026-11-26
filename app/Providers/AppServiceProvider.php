@@ -19,6 +19,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         RateLimiter::for('otp-send', fn (Request $request) => Limit::perMinute(3)->by('otp-send:'.strtolower((string) $request->input('email')).'|'.$request->ip()));
+        RateLimiter::for('gate-scan', fn (Request $request) => Limit::perMinute(120)->by('gate-scan:'.$request->user()?->id.'|'.$request->ip()));
 
         RateLimiter::for('otp-verify', fn (Request $request) => [
             Limit::perMinute(10)->by('otp-verify-min:'.strtolower((string) $request->input('email')).'|'.$request->ip()),

@@ -70,4 +70,11 @@ class User extends Authenticatable
     {
         return Ticket::query()->whereHas('order', fn ($query) => $query->where('user_id', $this->id));
     }
+
+    public function maskedEmail(): string
+    {
+        [$local, $domain] = array_pad(explode('@', $this->email, 2), 2, '');
+
+        return mb_substr($local, 0, 1).str_repeat('*', max(2, mb_strlen($local) - 1)).'@'.$domain;
+    }
 }

@@ -77,4 +77,15 @@ class TicketService
             ->latest()
             ->get();
     }
+
+    public function paidOrdersWithTickets(int $userId, int $perPage = 5): LengthAwarePaginator
+    {
+        return Order::query()
+            ->where('user_id', $userId)
+            ->where('status', OrderStatus::Paid)
+            ->has('tickets')
+            ->with(['tickets' => fn ($query) => $query->orderBy('id'), 'tickets.orderItem.ticketCategory.event.venue'])
+            ->latest('paid_at')
+            ->paginate($perPage);
+    }
 }
